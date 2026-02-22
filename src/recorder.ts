@@ -78,6 +78,14 @@ export class Recorder {
    */
   public start(): void {
     logger.info('recorder.start()');
+    // MediaRecorder は state が "inactive" のときのみ start() を呼び出せる。
+    // それ以外の状態で呼び出すと DOMException がスローされるため、ここでガードする。
+    if (this.mediaRecorder.state !== 'inactive') {
+      logger.info('recorder.start() called while MediaRecorder is not inactive', {
+        state: this.mediaRecorder.state,
+      });
+      return;
+    }
     this.mediaRecorder.start();
   }
 
