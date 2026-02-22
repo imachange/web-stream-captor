@@ -74,7 +74,15 @@ export function mixStreams(streams: MediaStream[]): MediaStream {
 
   const mixed = new MediaStream();
   // video は最初のストリームから引き継ぐ
-  streams[0].getVideoTracks().forEach((t) => mixed.addTrack(t));
+  const videoTracks = streams[0].getVideoTracks();
+  if (videoTracks.length === 0) {
+    logger.warn('no video tracks found on first stream when mixing', {
+      streamIndex: 0,
+      totalStreams: streams.length,
+    });
+  } else {
+    videoTracks.forEach((t) => mixed.addTrack(t));
+  }
   // ミキシングされた音声を追加
   destination.stream.getAudioTracks().forEach((t) => mixed.addTrack(t));
   logger.info('mixed streams', { videoTracks: mixed.getVideoTracks().length, audioTracks: mixed.getAudioTracks().length });
