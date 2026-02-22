@@ -42,6 +42,7 @@ btnCapture.addEventListener('click', async () => {
       mic = await captureAudio();
     } catch (err) {
       logger.error('could not get microphone', { error: err });
+      alert('マイク音声を取得できませんでした。画面共有のみ録画されます。');
     }
 
     if (mic) {
