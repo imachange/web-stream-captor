@@ -1,0 +1,93 @@
+# Gitleaks：差分/現状スキャン（push / PR）と
+# 履歴全体スキャン（schedule / 手動 full）の簡易ワークフロー
+#
+# - PR にコメントしない、検出があればジョブを失敗させる
+# - 手動実行（workflow_dispatch）で fast（差分/現状）か full（履歴全体）を選択可能
+#
+name: 🛡️ Security: Gitleaks (fast scan + scheduled/full scan)
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # 週次フルスキャン（UTC 日曜 03:00）— 必要に応じて調整してください
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      scan:
+        description: '実行タイプを選択してください: fast（差分/現状）または full（履歴全体）'
+        required: true
+        default: 'fast'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gitleaks-scan-${{ github.ref || github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    name: Fast scan (push / pull_request / manual fast)
+    runs-on: ubuntu-latest
+    # 実行条件：push または pull_request の場合に常に実行。
+    # 手動実行では inputs.scan が 'fast' のときに実行。
+    if: "contains(['push','pull_request'], github.event_name) || github.event.inputs.scan == 'fast'"
+    steps:
+      - name: コードをチェックアウト
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 実行開始のログ（日本語）
+        run: echo "Gitleaks を実行します（差分/現状）。検出があればジョブは失敗します。"
+
+      - name: Gitleaks を実行（検出でジョブ失敗）
+        # シンプルに action を使って検出を行う。見つかれば exit non-zero で失敗。
+        uses: zricethezav/gitleaks-action@v1
+        with:
+          args: detect --source . --verbose --redact
+
+      - name: 結果ログ（日本語）
+        if: success()
+        run: echo "Gitleaks の実行が完了しました。検出はありませんでした。"
+      - name: 結果ログ（エラー時、日本語）
+        if: failure()
+        run: echo "::error::Gitleaks が問題を検出しました。検出内容を確認して対応してください。"
+
+  full-scan:
+    name: Full-history scan (schedule / manual full)
+    runs-on: ubuntu-latest
+    # 実行条件：スケジュール実行、または手動で inputs.scan == 'full' のとき
+    if: "github.event_name == 'schedule' || github.event.inputs.scan == 'full'"
+    steps:
+      - name: フル履歴を含めてチェックアウト
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: フルスキャン開始のログ（日本語）
+        run: echo "Gitleaks による履歴全体のスキャンを実行します（フルスキャン）。検出があってもジョブは継続してレポートを保存します。"
+
+      - name: Gitleaks フルスキャン（JSON レポート出力）
+        # フルスキャンでは検出があっても後続でアーティファクトを保存するため continue-on-error を許可
+        continue-on-error: true
+        uses: zricethezav/gitleaks-action@v1
+        with:
+          args: detect --source . --verbose --redact --report-format json --report-path gitleaks-report.json
+
+      - name: レポートをアーティファクトとしてアップロード（日本語）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.json
+
+      - name: フルスキャン完了のログ（日本語）
+        run: |
+          if [ -f gitleaks-report.json ] && [ -s gitleaks-report.json ]; then
+            echo "フルスキャン完了：検出がありました。詳細レポートをアーティファクトとして保存しました。"
+            echo "ワークフローのアーティファクト（gitleaks-report）をダウンロードして内容を確認してください。"
+          else
+            echo "フルスキャン完了：検出はありませんでした。"
+          fi

@@ -1,0 +1,12 @@
+gitleaks:
+      glob: "**/*"
+      # tags をつけると `lefthook run pre-commit --tags security` のように絞り込み実行が可能
+      tags: security 
+      run: |
+        if command -v gitleaks > /dev/null 2>&1; then
+          # --staged があるので、引数にファイルリストを渡さなくてもgitleaksが差分を見てくれます
+          gitleaks protect --staged --redact --verbose
+        else
+          echo "Warning: gitleaks is not installed. Skipping secrets check."
+          exit 0 # 警告のみでコミットは通す設定
+        fi
