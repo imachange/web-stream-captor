@@ -12,7 +12,7 @@ app.innerHTML = `
   </header>
   <main>
     <section>
-      <button id="btn-capture" type="button">画面共有</button>
+      <button id="btn-capture" type="button">画面選択</button>
       <button id="btn-start" type="button" disabled>録画開始</button>
       <button id="btn-stop" type="button" disabled>停止</button>
     </section>
