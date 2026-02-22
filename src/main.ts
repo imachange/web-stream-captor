@@ -67,6 +67,9 @@ btnCapture.addEventListener('click', async () => {
     btnCapture.disabled = true;
   } catch (err) {
     logger.error('capture failed', { error: err });
+    // エラーが発生した場合はボタン状態をリセットして再試行できるようにする
+    btnCapture.disabled = false;
+    btnStart.disabled = true;
   }
 });
 
