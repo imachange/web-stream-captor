@@ -92,30 +92,35 @@ btnStop.addEventListener('click', async () => {
   downloads.appendChild(a);
 
   // ページ上で再生できるビデオも追加して音声を確認
-  const player = document.createElement('video');
-  player.controls = true;
-  player.src = url;
-  player.style.display = 'block';
-  player.style.maxWidth = '100%';
-  downloads.appendChild(player);
+  try {
+    const blob = await recorder.stop();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `capture-${Date.now()}.webm`;
+    a.textContent = 'ダウンロード';
+    downloads.appendChild(a);
 
-  // Blob URL を使い終わったら解放する
-  const cleanupObjectUrl = () => {
-    URL.revokeObjectURL(url);
-    player.removeEventListener('ended', cleanupObjectUrl);
-    player.removeEventListener('error', cleanupObjectUrl);
-  };
-  player.addEventListener('ended', cleanupObjectUrl);
-  player.addEventListener('error', cleanupObjectUrl);
-  // ストリームを解放
-  // 元のストリームも停止
-  const orig = (currentStream as any)?._orig as MediaStream[] | undefined;
-  if (orig) {
-    orig.forEach((s) => s.getTracks().forEach((t) => t.stop()));
-  } else {
-    currentStream?.getTracks().forEach((t) => t.stop());
+    // ページ上で再生できるビデオも追加して音声を確認
+    const player = document.createElement('video');
+    player.controls = true;
+    player.src = url;
+    player.style.display = 'block';
+    player.style.maxWidth = '100%';
+    downloads.appendChild(player);
+  } catch (error) {
+    console.error('Failed to stop recorder', error);
+  } finally {
+    // ストリームを解放
+    // 元のストリームも停止
+    const orig = (currentStream as any)?._orig as MediaStream[] | undefined;
+    if (orig) {
+      orig.forEach((s) => s.getTracks().forEach((t) => t.stop()));
+    } else {
+      currentStream?.getTracks().forEach((t) => t.stop());
+    }
+    preview.srcObject = null;
+    btnStop.disabled = true;
+    btnCapture.disabled = false;
   }
-  preview.srcObject = null;
-  btnStop.disabled = true;
-  btnCapture.disabled = false;
 });
