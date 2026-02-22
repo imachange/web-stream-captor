@@ -4,7 +4,7 @@
 # - PR にコメントしない、検出があればジョブを失敗させる
 # - 手動実行（workflow_dispatch）で fast（差分/現状）か full（履歴全体）を選択可能
 #
-name: Security: Gitleaks (fast scan + scheduled/full scan)
+name: Gitleaks (fast scan + scheduled/full scan)
 
 on:
   push:
