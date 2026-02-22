@@ -87,6 +87,15 @@ btnStart.addEventListener('click', () => {
 btnStop.addEventListener('click', async () => {
   if (!recorder) return;
   logger.info('click stop button');
+  const blob = await recorder.stop();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `capture-${Date.now()}.webm`;
+  a.textContent = 'ダウンロード';
+  downloads.appendChild(a);
+
+  // ページ上で再生できるビデオも追加して音声を確認
   try {
     const blob = await recorder.stop();
     const url = URL.createObjectURL(blob);
@@ -104,9 +113,10 @@ btnStop.addEventListener('click', async () => {
     player.style.maxWidth = '100%';
     downloads.appendChild(player);
   } catch (error) {
-    logger.error('Failed to stop recorder', { error });
+    console.error('Failed to stop recorder', error);
   } finally {
     // ストリームを解放
+    // 元のストリームも停止
     const orig = (currentStream as any)?._orig as MediaStream[] | undefined;
     if (orig) {
       orig.forEach((s) => s.getTracks().forEach((t) => t.stop()));
