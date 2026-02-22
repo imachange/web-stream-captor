@@ -1,0 +1,44 @@
+# GitHub Pages を自動デプロイするワークフロー
+# mainブランチへの push 時に Vite でビルドし、
+# 結果を Pages 公開用の `gh-pages` ブランチ（または /public ルート）へ展開します。
+# GitHub Pages は repository settings で "Deployment source" を "GitHub Actions" に設定してください。
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build project
+        run: pnpm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          # optional: customize deploy_branch if you don't want gh-pages
+          # deploy_branch: gh-pages
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
