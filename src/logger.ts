@@ -29,6 +29,17 @@ export class CaptorLogger {
   }
 
   /**
+   * 警告レベルのメッセージを出力します。
+   * @param message - ログ本文
+   * @param context - 任意の追加情報
+   */
+  public warn(message: string, context?: Record<string, unknown>): void {
+    const serial = CaptorLogger.nextSerial();
+    const ts = new Date().toISOString();
+    console.warn(`[${serial}] [WARN] ${ts} - ${message}`, context || '');
+  }
+
+  /**
    * エラーレベルのメッセージを出力します。
    * @param message - ログ本文
    * @param context - 任意の追加情報
