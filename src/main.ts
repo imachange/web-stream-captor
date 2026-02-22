@@ -30,7 +30,7 @@ const preview = document.getElementById('preview') as HTMLVideoElement;
 const downloads = document.getElementById('downloads') as HTMLDivElement;
 
 let currentStream: MediaStream | null = null;
-let currentRecorder: Recorder | null = null;
+let recorder: Recorder | null = null;
 
 btnCapture.addEventListener('click', async () => {
   logger.info('click capture button');
