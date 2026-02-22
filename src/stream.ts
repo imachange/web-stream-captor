@@ -52,39 +52,31 @@ export async function captureAudio(): Promise<MediaStream> {
  * @returns 合成された MediaStream
  */
 export function mixStreams(streams: MediaStream[]): MediaStream {
-  if (streams.length === 0) {
-    throw new Error('no streams to mix');
-  }
+  if (streams.length === 0) throw new Error('no streams to mix');
 
-  const ctx = new AudioContext();
+  // 複数ストリームを AudioContext でミキシング
+  const ctx = new AudioContext({ sampleRate: 48000 });
   const destination = ctx.createMediaStreamDestination();
 
   streams.forEach((stream, idx) => {
-    stream.getAudioTracks().forEach((track) => {
-      try {
-        const single = new MediaStream([track]);
-        const src = ctx.createMediaStreamSource(single);
-        src.connect(destination);
-      } catch (e) {
-        // Safari などで MediaStreamSource がトラック単独だと例外になる場合
-        logger.error('failed to create MediaStreamSource', { error: e, idx });
-      }
-    });
+    try {
+      const src = ctx.createMediaStreamSource(stream);
+      const gainNode = ctx.createGain();
+      gainNode.gain.value = 1.0;
+      src.connect(gainNode).connect(destination);
+      logger.info('connected stream to audio context', { idx, tracks: stream.getAudioTracks().length });
+    } catch (err) {
+      logger.error('failed to process stream in audio context', { idx, error: err });
+    }
   });
 
   const mixed = new MediaStream();
-  // video は最初のストリームから引き継ぐ
-  const videoTracks = streams[0].getVideoTracks();
-  if (videoTracks.length === 0) {
-    logger.warn('no video tracks found on first stream when mixing', {
-      streamIndex: 0,
-      totalStreams: streams.length,
-    });
-  } else {
-    videoTracks.forEach((t) => mixed.addTrack(t));
-  }
-  // ミキシングされた音声を追加
+  streams[0].getVideoTracks().forEach((t) => mixed.addTrack(t));
   destination.stream.getAudioTracks().forEach((t) => mixed.addTrack(t));
-  logger.info('mixed streams', { videoTracks: mixed.getVideoTracks().length, audioTracks: mixed.getAudioTracks().length });
+
+  logger.info('mixed streams with audio context', {
+    videoTracks: mixed.getVideoTracks().length,
+    audioTracks: mixed.getAudioTracks().length,
+  });
   return mixed;
 }
