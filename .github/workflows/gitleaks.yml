@@ -4,7 +4,7 @@
 # - PR にコメントしない、検出があればジョブを失敗させる
 # - 手動実行（workflow_dispatch）で fast（差分/現状）か full（履歴全体）を選択可能
 #
-name: 🛡️ Security: Gitleaks (fast scan + scheduled/full scan)
+name: Gitleaks (fast scan + scheduled/full scan)
 
 on:
   push:
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     # 実行条件：push または pull_request の場合に常に実行。
     # 手動実行では inputs.scan が 'fast' のときに実行。
-    if: "contains(['push','pull_request'], github.event_name) || github.event.inputs.scan == 'fast'"
+    if: "github.event_name == 'push' || github.event_name == 'pull_request' || github.event.inputs.scan == 'fast'"
     steps:
       - name: コードをチェックアウト
         uses: actions/checkout@v4
