@@ -98,6 +98,15 @@ btnStop.addEventListener('click', async () => {
   player.style.display = 'block';
   player.style.maxWidth = '100%';
   downloads.appendChild(player);
+
+  // Blob URL を使い終わったら解放する
+  const cleanupObjectUrl = () => {
+    URL.revokeObjectURL(url);
+    player.removeEventListener('ended', cleanupObjectUrl);
+    player.removeEventListener('error', cleanupObjectUrl);
+  };
+  player.addEventListener('ended', cleanupObjectUrl);
+  player.addEventListener('error', cleanupObjectUrl);
   // ストリームを解放
   // 元のストリームも停止
   const orig = (currentStream as any)?._orig as MediaStream[] | undefined;
